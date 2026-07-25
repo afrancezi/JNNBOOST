@@ -18,6 +18,16 @@ public class AppDbContext : DbContext
             .HasIndex(l => l.ChaveLicenca)
             .IsUnique();
 
+        // Default de verdade no banco (não só no C#) - assim funciona mesmo
+        // em INSERTs feitos diretamente via SQL, sem passar pela API.
+        modelBuilder.Entity<Licenca>()
+            .Property(l => l.CriadaEm)
+            .HasDefaultValueSql("NOW()");
+
+        modelBuilder.Entity<TentativaBloqueada>()
+            .Property(t => t.TentativaEm)
+            .HasDefaultValueSql("NOW()");
+
         modelBuilder.Entity<TentativaBloqueada>()
             .HasOne(t => t.Licenca)
             .WithMany(l => l.TentativasBloqueadas)

@@ -4,9 +4,9 @@ services:
     container_name: postgres-licencas
     restart: unless-stopped
     environment:
-      POSTGRES_USER: appuser
-      POSTGRES_PASSWORD: TROQUE_ESTA_SENHA
-      POSTGRES_DB: licencas_db
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     volumes:
       - postgres-licencas-data:/var/lib/postgresql/data
     # Sem "ports" aqui de propósito - o banco não fica exposto pra fora,
@@ -21,7 +21,7 @@ services:
     depends_on:
       - postgres-licencas
     environment:
-      DB_CONNECTION_STRING: "Host=postgres-licencas;Database=licencas_db;Username=appuser;Password=TROQUE_ESTA_SENHA"
+      DB_CONNECTION_STRING: "Host=postgres-licencas;Database=${DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD}"
     ports:
       - "5000:8080"   # ajuste a porta externa conforme sua necessidade
 

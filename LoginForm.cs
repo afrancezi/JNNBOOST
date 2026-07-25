@@ -20,9 +20,12 @@ namespace JnnBoost
         private Label labelStatus = null!;
         private PictureBox logoPicture = null!;
 
-        // SUBSTITUA pela URL da sua nova implantação
+        // Agora aponta para a API própria (Postgres + ASP.NET Core),
+        // no lugar do Google Apps Script.
+        // Ex.: "http://192.168.15.13:5000/api/validar" (rede local/teste)
+        //      "https://seu-dominio.com/api/validar"   (produção, com HTTPS)
         private const string UrlServidor =
-            "https://script.google.com/macros/s/AKfycbwWx4eZtPZ8uXCfuhMQVl-ywGwUEQ5tRPNCXKnlyMfOHAvi4edFYjwlFAvF41udOuExGw/exec";
+            "http://192.168.15.13:5000/api/validar";
 
         private static readonly Color CorFundo = Color.FromArgb(26, 26, 46);
         private static readonly Color CorBotao = Color.FromArgb(22, 33, 62);
@@ -151,7 +154,9 @@ namespace JnnBoost
         }
 
         // -----------------------------------------------
-        // LOGIN VIA GET COM PARÂMETROS NA URL
+        // LOGIN VIA POST COM CORPO JSON
+        // (antes era GET com parâmetros na URL - migrado para não
+        //  expor a chave de licença em logs/histórico de proxy)
         // -----------------------------------------------
         private async Task TentarLoginAsync()
         {
@@ -170,13 +175,6 @@ namespace JnnBoost
 
             try
             {
-                // Envia via GET com parâmetros na URL
-                // Encode para escapar caracteres especiais na senha
-                string senhaEncoded = Uri.EscapeDataString(senha);
-                string hwidEncoded = Uri.EscapeDataString(hwid);
-                string url = $"{UrlServidor}?senha={senhaEncoded}&hwid={hwidEncoded}";
-
-                // Permite redirects automáticos — GET funciona corretamente com redirect
                 var handler = new HttpClientHandler
                 {
                     AllowAutoRedirect = true
@@ -185,7 +183,14 @@ namespace JnnBoost
                 using var cliente = new HttpClient(handler);
                 cliente.Timeout = TimeSpan.FromSeconds(15);
 
-                var response = await cliente.GetAsync(url);
+                var payload = new { senha = senha, hwid = hwid };
+                var conteudo = new StringContent(
+                    JsonSerializer.Serialize(payload),
+                    Encoding.UTF8,
+                    "application/json"
+                );
+
+                var response = await cliente.PostAsync(UrlServidor, conteudo);
                 var body = await response.Content.ReadAsStringAsync();
 
                 using var doc = JsonDocument.Parse(body);

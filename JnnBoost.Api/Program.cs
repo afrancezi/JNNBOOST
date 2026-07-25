@@ -16,12 +16,14 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 var app = builder.Build();
 
-// Aplica migrations automaticamente ao iniciar (conveniente em dev/homelab;
-// em produção mais madura, prefira rodar migrations como etapa separada do pipeline)
+// Cria as tabelas automaticamente com base nos Models, caso ainda não existam.
+// Simples e direto para este projeto. Se no futuro você precisar alterar o
+// schema (adicionar uma coluna, por exemplo), essa abordagem não gera um
+// histórico de mudanças — nesse ponto vale migrar para EF Migrations de verdade.
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
+    db.Database.EnsureCreated();
 }
 
 app.MapPost("/api/validar", async (ValidarRequest req, AppDbContext db) =>
