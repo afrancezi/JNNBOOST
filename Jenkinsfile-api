@@ -1,0 +1,40 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Checkout') {
+            steps {
+                // Ajuste a branch/URL conforme seu repositório
+                git url: 'https://github.com/afrancezi/JNNBOOST.git', branch: 'main'
+            }
+        }
+
+        stage('Build & Deploy API') {
+            steps {
+                dir('JnnBoost.Api') {
+                    // Reconstrói e reinicia só a API + banco, sem afetar
+                    // outros serviços (Zabbix, Jenkins) rodando na mesma VM.
+                    sh 'docker compose up -d --build'
+                }
+            }
+        }
+
+        stage('Verificar saúde da API') {
+            steps {
+                // Dá um tempo para a API subir antes de checar
+                sh 'sleep 8'
+                sh 'curl -f http://localhost:5000/api/health || exit 1'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Deploy da API concluído com sucesso.'
+        }
+        failure {
+            echo 'Falha no deploy da API - verifique os logs acima.'
+        }
+    }
+}
+
