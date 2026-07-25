@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+	<TargetFramework>net8.0</TargetFramework>
+	<Nullable>enable</Nullable>
+	<ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+	<!-- Avoid requiring app.manifest in class library builds when publishing from top-level project -->
+	<None Include="app.manifest" Visible="false" />
+  </ItemGroup>
+</Project>

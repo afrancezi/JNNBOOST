@@ -1,0 +1,14 @@
+ .vs/
+bin/
+obj/
+publish/
+*.user
+*.suo
+appsettings.Development.json
+appsettings.Local.json
+*.env
+.env
+*.db
+*.sqlite
+Thumbs.db
+

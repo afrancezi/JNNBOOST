@@ -1,0 +1,64 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <!-- Evita geração automática de atributos de assembly que causam duplicatas em build multi-projeto -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <ApplicationIcon>JBoost.ico</ApplicationIcon>
+    <!-- Evita geração automática do atributo TargetFramework (resolve duplicatas em builds multi-projeto) -->
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <DebugType Condition="'$(Configuration)'=='Debug'">embedded</DebugType>
+    <DebugType Condition="'$(Configuration)'=='Release'">none</DebugType>
+    <Optimize Condition="'$(Configuration)'=='Release'">true</Optimize>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <ApplicationIcon>JBoost.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="JnnBoost.WinForms.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="JnnBoost.Core\JnnBoost.Core.csproj" />
+  </ItemGroup>
+
+  <!-- Excluir temporariamente código do projeto WPF para permitir publish da versão WinForms antiga -->
+  <ItemGroup>
+    <Compile Remove="JnnBoost.Wpf\**\*.cs" />
+    <None Remove="JnnBoost.Wpf\**\*.xaml" />
+    <EmbeddedResource Remove="JnnBoost.Wpf\**\*.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Management" Version="10.0.5" />
+    <!-- Pin Vortice packages to the resolved 3.2.0 to avoid API mismatches during build -->
+    <PackageReference Include="Vortice.Direct3D11" Version="3.2.0" />
+    <PackageReference Include="Vortice.DXGI" Version="3.2.0" />
+    <PackageReference Include="Vortice.D3DCompiler" Version="3.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Properties\Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+
+
+</Project>

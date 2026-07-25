@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+  <PropertyGroup>
+	<OutputType>WinExe</OutputType>
+	<TargetFramework>net8.0-windows</TargetFramework>
+	<UseWindowsForms>true</UseWindowsForms>
+	<Nullable>enable</Nullable>
+	<ImplicitUsings>enable</ImplicitUsings>
+	<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+	<AssemblyName>JnnBoost</AssemblyName>
+	<RootNamespace>JnnBoost</RootNamespace>
+	<Optimize Condition="'$(Configuration)'=='Release'">true</Optimize>
+  </PropertyGroup>
+	<PropertyGroup>
+	<!-- Desativa itens implícitos de compilação para controlar inclusão de arquivos manualmente -->
+	<EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+	<!-- Inclui só os arquivos do projeto WinForms (exclui pasta Wpf) -->
+	<Compile Include="**\*.cs" Exclude="JnnBoost.Wpf\**\*;obj\**\*;bin\**\*" />
+  </ItemGroup>
+  <ItemGroup>
+	<ProjectReference Include="JnnBoost.Core\JnnBoost.Core.csproj" />
+  </ItemGroup>
+</Project>
