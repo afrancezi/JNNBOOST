@@ -1,0 +1,29 @@
+services:
+  postgres-licencas:
+    image: postgres:16
+    container_name: postgres-licencas
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: appuser
+      POSTGRES_PASSWORD: TROQUE_ESTA_SENHA
+      POSTGRES_DB: licencas_db
+    volumes:
+      - postgres-licencas-data:/var/lib/postgresql/data
+    # Sem "ports" aqui de propósito - o banco não fica exposto pra fora,
+    # só a API (na mesma rede Docker) consegue falar com ele.
+
+  jnnboost-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: jnnboost-api
+    restart: unless-stopped
+    depends_on:
+      - postgres-licencas
+    environment:
+      DB_CONNECTION_STRING: "Host=postgres-licencas;Database=licencas_db;Username=appuser;Password=TROQUE_ESTA_SENHA"
+    ports:
+      - "5000:8080"   # ajuste a porta externa conforme sua necessidade
+
+volumes:
+  postgres-licencas-data:
