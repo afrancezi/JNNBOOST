@@ -26,6 +26,10 @@ DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
 API_URL = os.environ.get("API_URL", "http://jnnboost-api:8080")
 ADMIN_API_KEY = os.environ["ADMIN_API_KEY"]
 
+# ID do canal onde as ações administrativas serão registradas (auditoria).
+# Opcional: se não configurado, o bot simplesmente não envia log nenhum.
+LOG_CHANNEL_ID = os.environ.get("LOG_CHANNEL_ID")
+
 intents = discord.Intents.default()
 intents.message_content = True
 
@@ -39,6 +43,15 @@ def apenas_admin():
     async def predicado(ctx):
         return ctx.author.guild_permissions.administrator
     return commands.check(predicado)
+
+
+async def registrar_log(embed: discord.Embed):
+    """Envia um embed de auditoria para o canal de log configurado, se houver."""
+    if not LOG_CHANNEL_ID:
+        return
+    canal = bot.get_channel(int(LOG_CHANNEL_ID))
+    if canal is not None:
+        await canal.send(embed=embed)
 
 
 @bot.event
@@ -66,6 +79,16 @@ async def criar_licenca(ctx, dias: int = None):
                 f"**Validade:** {texto_expira}"
             )
 
+            embed = discord.Embed(
+                title="📝 Licença criada",
+                color=discord.Color.green()
+            )
+            embed.add_field(name="Executado por", value=ctx.author.mention, inline=True)
+            embed.add_field(name="Chave", value=f"`{data['chave']}`", inline=True)
+            embed.add_field(name="Validade", value=texto_expira, inline=False)
+            embed.timestamp = discord.utils.utcnow()
+            await registrar_log(embed)
+
 
 @bot.command(name="renovarlicenca")
 @apenas_admin()
@@ -83,6 +106,16 @@ async def renovar_licenca(ctx, chave: str, dias: int):
                 f"✅ Licença `{data['chave']}` renovada!\n"
                 f"**Nova validade:** expira em {data['expira_em']}"
             )
+
+            embed = discord.Embed(
+                title="🔄 Licença renovada",
+                color=discord.Color.blue()
+            )
+            embed.add_field(name="Executado por", value=ctx.author.mention, inline=True)
+            embed.add_field(name="Chave", value=f"`{data['chave']}`", inline=True)
+            embed.add_field(name="Nova validade", value=f"expira em {data['expira_em']}", inline=False)
+            embed.timestamp = discord.utils.utcnow()
+            await registrar_log(embed)
 
 
 @bot.command(name="statuslicenca")
