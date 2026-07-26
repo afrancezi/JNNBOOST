@@ -22,8 +22,24 @@ services:
       - postgres-licencas
     environment:
       DB_CONNECTION_STRING: "Host=postgres-licencas;Database=${DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD}"
+      ADMIN_API_KEY: ${ADMIN_API_KEY}
     ports:
       - "5000:8080"   # ajuste a porta externa conforme sua necessidade
+
+  discord-bot:
+    build:
+      context: ./discord-bot
+      dockerfile: Dockerfile
+    container_name: jnnboost-discord-bot
+    restart: unless-stopped
+    depends_on:
+      - jnnboost-api
+    environment:
+      DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN}
+      API_URL: "http://jnnboost-api:8080"
+      ADMIN_API_KEY: ${ADMIN_API_KEY}
+    # Sem "ports" aqui - o bot só se conecta PARA FORA (Discord + API),
+    # ninguém precisa se conectar NELE.
 
 volumes:
   postgres-licencas-data:

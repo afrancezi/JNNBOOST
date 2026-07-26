@@ -25,7 +25,7 @@ namespace JnnBoost
         // Ex.: "http://192.168.15.13:5000/api/validar" (rede local/teste)
         //      "https://seu-dominio.com/api/validar"   (produção, com HTTPS)
         private const string UrlServidor =
-            "http://192.168.15.13:5000/api/validar";
+            "http://SEU_IP_OU_DOMINIO:5000/api/validar";
 
         private static readonly Color CorFundo = Color.FromArgb(26, 26, 46);
         private static readonly Color CorBotao = Color.FromArgb(22, 33, 62);
@@ -217,6 +217,13 @@ namespace JnnBoost
                     case "bloqueado":
                         MostrarStatus(
                             "Esta chave já está vinculada\na outro computador.",
+                            CorErro);
+                        txtSenha.Clear();
+                        break;
+
+                    case "expirada":
+                        MostrarStatus(
+                            "Esta chave de acesso expirou.\nEntre em contato para renovar.",
                             CorErro);
                         txtSenha.Clear();
                         break;

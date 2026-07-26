@@ -28,6 +28,10 @@ public class Licenca
     [Column("criada_em")]
     public DateTime CriadaEm { get; set; } = DateTime.UtcNow;
 
+    // Data em que o acesso deixa de ser válido. Null = sem expiração (acesso vitalício).
+    [Column("data_expiracao")]
+    public DateTime? DataExpiracao { get; set; }
+
     // Navegação: uma licença pode ter várias tentativas bloqueadas
     public ICollection<TentativaBloqueada> TentativasBloqueadas { get; set; } = new List<TentativaBloqueada>();
 }
