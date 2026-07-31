@@ -39,6 +39,7 @@ services:
       API_URL: "http://jnnboost-api:8080"
       ADMIN_API_KEY: ${ADMIN_API_KEY}
       LOG_CHANNEL_ID: ${LOG_CHANNEL_ID}
+      STATUS_CHANNEL_ID: ${STATUS_CHANNEL_ID}
     # Sem "ports" aqui - o bot só se conecta PARA FORA (Discord + API),
     # ninguém precisa se conectar NELE.
 
