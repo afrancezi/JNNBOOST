@@ -21,9 +21,12 @@ pipeline {
 
         stage('Verificar saúde da API') {
             steps {
-                // Dá um tempo para a API subir antes de checar
-                sh 'sleep 8'
-                sh 'curl -f http://localhost:5000/api/health || exit 1'
+                // Dá um tempo para a API e o Caddy subirem antes de checar
+                sh 'sleep 10'
+                // -k aceita o certificado auto-assinado do Caddy (rede local,
+                // sem domínio ainda). Remova o -k quando migrar para
+                // certificado Let's Encrypt de verdade em produção.
+                sh 'curl -k -f https://localhost/api/health || exit 1'
             }
         }
     }
@@ -37,4 +40,3 @@ pipeline {
         }
     }
 }
-

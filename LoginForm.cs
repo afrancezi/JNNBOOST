@@ -20,12 +20,12 @@ namespace JnnBoost
         private Label labelStatus = null!;
         private PictureBox logoPicture = null!;
 
-        // Agora aponta para a API própria (Postgres + ASP.NET Core),
-        // no lugar do Google Apps Script.
-        // Ex.: "http://192.168.15.13:5000/api/validar" (rede local/teste)
-        //      "https://seu-dominio.com/api/validar"   (produção, com HTTPS)
+        // Agora aponta para a API própria via HTTPS (Postgres + ASP.NET Core
+        // atrás de um proxy Caddy).
+        // Ex.: "https://192.168.15.13/api/validar" (rede local/teste)
+        //      "https://seu-dominio.com/api/validar" (produção, com Let's Encrypt)
         private const string UrlServidor =
-            "http://SEU_IP_OU_DOMINIO:5000/api/validar";
+            "https://SEU_IP_OU_DOMINIO/api/validar";
 
         private static readonly Color CorFundo = Color.FromArgb(26, 26, 46);
         private static readonly Color CorBotao = Color.FromArgb(22, 33, 62);
@@ -179,6 +179,18 @@ namespace JnnBoost
                 {
                     AllowAutoRedirect = true
                 };
+
+                // ATENÇÃO - TEMPORÁRIO: enquanto a API usa certificado
+                // auto-assinado (rede local, sem domínio público ainda),
+                // o .NET rejeitaria a conexão por padrão (certificado não
+                // confiável). Essa linha aceita o certificado mesmo assim.
+                //
+                // ISSO PRECISA SER REMOVIDO quando migrar para um domínio
+                // real com certificado Let's Encrypt (aí a validação
+                // padrão do .NET volta a funcionar normalmente e protege
+                // de verdade contra ataques man-in-the-middle).
+                handler.ServerCertificateCustomValidationCallback =
+                    (message, cert, chain, errors) => true;
 
                 using var cliente = new HttpClient(handler);
                 cliente.Timeout = TimeSpan.FromSeconds(15);

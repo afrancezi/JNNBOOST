@@ -1,0 +1,34 @@
+# Caddyfile
+#
+# Proxy reverso com HTTPS na frente da API.
+#
+# MODO ATUAL (rede local, sem domínio): usa certificado auto-assinado
+# gerado automaticamente pelo Caddy ("tls internal"). Funciona e
+# criptografa o tráfego, mas o Windows/navegador vai mostrar aviso de
+# certificado não confiável, já que não é emitido por uma autoridade
+# pública - normal em ambiente de teste/rede local.
+#
+# QUANDO FOR PARA UM VPS COM DOMÍNIO DE VERDADE:
+# troque ":443" por "seu-dominio.com" (sem porta) e remova a linha
+# "tls internal" - o Caddy passa a emitir um certificado real e
+# gratuito via Let's Encrypt automaticamente, sem mais nenhuma mudança.
+
+:443 {
+	tls internal
+
+	# Endpoint público - qualquer app cliente pode acessar
+	reverse_proxy /api/validar jnnboost-api:8080
+	reverse_proxy /api/health jnnboost-api:8080
+
+	# Endpoints administrativos - só respondem para IPs autorizados.
+	# Ajuste a lista de IPs abaixo para o(s) seu(s) IP(s) confiável(is).
+	@admin {
+		path /api/admin/*
+	}
+	handle @admin {
+		@nao_autorizado not remote_ip 192.168.15.0/24
+		respond @nao_autorizado 403
+
+		reverse_proxy jnnboost-api:8080
+	}
+}
