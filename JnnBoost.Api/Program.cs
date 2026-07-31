@@ -170,6 +170,24 @@ app.MapGet("/api/admin/licenca/{chave}", async (string chave, HttpRequest http, 
     });
 });
 
+app.MapGet("/api/admin/licencas-ativas", async (HttpRequest http, AppDbContext db) =>
+{
+    if (!AdminAutorizado(http))
+        return Results.Json(new { erro = "não autorizado" }, statusCode: 401);
+
+    var ativas = await db.Licencas
+        .Where(l => l.Ativa)
+        .OrderBy(l => l.DataExpiracao)
+        .Select(l => new { chave = l.ChaveLicenca, expira_em = l.DataExpiracao })
+        .ToListAsync();
+
+    return Results.Ok(new
+    {
+        total = ativas.Count,
+        licencas = ativas
+    });
+});
+
 // Endpoint simples de health check (útil pro Zabbix monitorar essa API depois!)
 app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }));
 
