@@ -32,6 +32,12 @@ public class Licenca
     [Column("data_expiracao")]
     public DateTime? DataExpiracao { get; set; }
 
+    // Revogação manual (ex: reembolso, banimento por compartilhamento).
+    // Diferente de expiração: uma vez revogada, a licença NUNCA reativa
+    // sozinha, mesmo que alguém chame /api/validar de novo.
+    [Column("revogada")]
+    public bool Revogada { get; set; } = false;
+
     // Navegação: uma licença pode ter várias tentativas bloqueadas
     public ICollection<TentativaBloqueada> TentativasBloqueadas { get; set; } = new List<TentativaBloqueada>();
 }

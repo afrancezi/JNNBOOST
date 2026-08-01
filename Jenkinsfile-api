@@ -1,27 +1,36 @@
 pipeline {
     agent any
 
+    // Caminho REAL no host (e, graças ao bind mount, também visível
+    // dentro do container do Jenkins no mesmo caminho). É essa pasta
+    // que tem o .env de verdade - por isso operamos nela diretamente,
+    // em vez de deixar o Jenkins clonar uma cópia isolada e sem segredos.
+    environment {
+        DEPLOY_DIR = '/home/afrancezi/JNNBOOST'
+    }
+
     stages {
-        stage('Checkout') {
+        stage('Atualizar código') {
             steps {
-                // Ajuste a branch/URL conforme seu repositório
-                git url: 'https://github.com/afrancezi/JNNBOOST.git', branch: 'main'
+                sh '''
+                    cd "$DEPLOY_DIR"
+                    git fetch origin
+                    git reset --hard origin/main
+                '''
             }
         }
 
         stage('Build & Deploy API') {
             steps {
-                dir('JnnBoost.Api') {
-                    // Reconstrói e reinicia só a API + banco, sem afetar
-                    // outros serviços (Zabbix, Jenkins) rodando na mesma VM.
-                    sh 'docker compose up -d --build'
-                }
+                sh '''
+                    cd "$DEPLOY_DIR/JnnBoost.Api"
+                    docker compose up -d --build
+                '''
             }
         }
 
         stage('Verificar saúde da API') {
             steps {
-                // Dá um tempo para a API e o Caddy subirem antes de checar
                 sh 'sleep 10'
                 // -k aceita o certificado auto-assinado do Caddy (rede local,
                 // sem domínio ainda). Remova o -k quando migrar para
@@ -40,3 +49,4 @@ pipeline {
         }
     }
 }
+
