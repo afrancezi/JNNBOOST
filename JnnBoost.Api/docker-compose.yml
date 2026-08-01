@@ -23,8 +23,21 @@ services:
     environment:
       DB_CONNECTION_STRING: "Host=postgres-licencas;Database=${DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD}"
       ADMIN_API_KEY: ${ADMIN_API_KEY}
+    # Sem "ports" publicado diretamente - agora só o Caddy (HTTPS) fala
+    # com a API. Ninguém acessa a porta 8080 direto de fora.
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: jnnboost-caddy
+    restart: unless-stopped
+    depends_on:
+      - jnnboost-api
     ports:
-      - "5000:8080"   # ajuste a porta externa conforme sua necessidade
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy-data:/data
+      - caddy-config:/config
 
   discord-bot:
     build:
@@ -45,3 +58,5 @@ services:
 
 volumes:
   postgres-licencas-data:
+  caddy-data:
+  caddy-config:

@@ -13,7 +13,19 @@
 # "tls internal" - o Caddy passa a emitir um certificado real e
 # gratuito via Let's Encrypt automaticamente, sem mais nenhuma mudança.
 
-:443 {
+# Opções globais - define qual certificado usar quando a conexão não
+# manda SNI (acontece ao conectar via IP literal, como o app WinForms
+# vai fazer: https://192.168.15.13/... - IPs não usam SNI por padrão).
+# Sem isso, conexões via IP falhariam mesmo com "tls internal" configurado.
+{
+	default_sni 192.168.15.13
+}
+
+# IMPORTANTE: o Caddy precisa saber PARA QUAL host/IP gerar o certificado
+# auto-assinado. Se o IP da sua VM mudar (ex: após reiniciar, se não tiver
+# IP fixo configurado), atualize a lista abaixo E o "default_sni" acima,
+# depois rode "docker compose up -d --build" de novo.
+localhost, 127.0.0.1, 192.168.15.13 {
 	tls internal
 
 	# Endpoint público - qualquer app cliente pode acessar
@@ -32,3 +44,4 @@
 		reverse_proxy jnnboost-api:8080
 	}
 }
+
