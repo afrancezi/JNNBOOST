@@ -167,6 +167,40 @@ async def status_licenca(ctx, chave: str):
             await enviar_para_canal(STATUS_CHANNEL_ID, embed)
 
 
+@bot.command(name="revogarlicenca")
+@apenas_admin()
+async def revogar_licenca(ctx, chave: str):
+    await apagar_mensagem(ctx)
+
+    payload = {"chave": chave}
+    async with aiohttp.ClientSession() as session:
+        async with session.post(f"{API_URL}/api/admin/revogar-licenca", json=payload, headers=HEADERS) as resp:
+            data = await resp.json()
+
+            if resp.status != 200:
+                embed = discord.Embed(
+                    title="❌ Erro ao revogar licença",
+                    description=f"`{data.get('erro', 'desconhecido')}`",
+                    color=discord.Color.red()
+                )
+                await enviar_para_canal(LOG_CHANNEL_ID, embed)
+                return
+
+            embed = discord.Embed(
+                title="🚫 Licença revogada",
+                color=discord.Color.dark_red()
+            )
+            embed.add_field(name="Executado por", value=ctx.author.mention, inline=True)
+            embed.add_field(name="Chave", value=f"`{data['chave']}`", inline=True)
+            embed.add_field(
+                name="Aviso",
+                value="Esta licença nunca mais poderá ser usada, mesmo com renovação.",
+                inline=False
+            )
+            embed.timestamp = discord.utils.utcnow()
+            await enviar_para_canal(LOG_CHANNEL_ID, embed)
+
+
 @bot.command(name="licencasativas")
 @apenas_admin()
 async def licencas_ativas(ctx):
@@ -209,6 +243,7 @@ async def licencas_ativas(ctx):
 
 @criar_licenca.error
 @renovar_licenca.error
+@revogar_licenca.error
 @status_licenca.error
 @licencas_ativas.error
 async def erro_comando(ctx, error):

@@ -197,6 +197,22 @@ app.MapGet("/api/admin/licenca/{chave}", async (string chave, HttpRequest http, 
     });
 });
 
+app.MapPost("/api/admin/revogar-licenca", async (RevogarLicencaRequest req, HttpRequest http, AppDbContext db) =>
+{
+    if (!AdminAutorizado(http))
+        return Results.Json(new { erro = "não autorizado" }, statusCode: 401);
+
+    var licenca = await db.Licencas.FirstOrDefaultAsync(l => l.ChaveLicenca == req.Chave);
+    if (licenca is null)
+        return Results.Json(new { erro = "licença não encontrada" }, statusCode: 404);
+
+    licenca.Ativa = false;
+    licenca.Revogada = true;
+    await db.SaveChangesAsync();
+
+    return Results.Ok(new { chave = licenca.ChaveLicenca, revogada = true });
+});
+
 app.MapGet("/api/admin/licencas-ativas", async (HttpRequest http, AppDbContext db) =>
 {
     if (!AdminAutorizado(http))
@@ -223,3 +239,4 @@ app.Run();
 record ValidarRequest(string Senha, string Hwid);
 record CriarLicencaRequest(string? Chave, int? Dias);
 record RenovarLicencaRequest(string Chave, int Dias);
+record RevogarLicencaRequest(string Chave);
