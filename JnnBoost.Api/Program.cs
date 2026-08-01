@@ -1,6 +1,8 @@
 using JnnBoost.Api.Data;
 using JnnBoost.Api.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,7 +22,27 @@ var adminApiKey = builder.Configuration["ADMIN_API_KEY"]
     ?? Environment.GetEnvironmentVariable("ADMIN_API_KEY")
     ?? throw new InvalidOperationException("ADMIN_API_KEY não configurada.");
 
+// Rate limiting: no máximo 10 tentativas por minuto, por IP, no endpoint
+// de validação. Protege contra força bruta tentando adivinhar chaves
+// de licença válidas.
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.AddPolicy("validar-policy", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "desconhecido",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+});
+
 var app = builder.Build();
+
+app.UseRateLimiter();
 
 // Cria as tabelas automaticamente com base nos Models, caso ainda não existam.
 // Simples e direto para este projeto. Se no futuro você precisar alterar o
@@ -50,6 +72,11 @@ app.MapPost("/api/validar", async (ValidarRequest req, AppDbContext db) =>
 
     if (licenca is null)
         return Results.Ok(new { status = "invalida" });
+
+    // Revogação manual (banimento/reembolso) tem prioridade sobre tudo -
+    // uma vez revogada, a licença nunca reativa sozinha.
+    if (licenca.Revogada)
+        return Results.Ok(new { status = "revogada" });
 
     // Checa expiração ANTES de qualquer outra lógica. Se venceu, revoga
     // o acesso nesse exato momento (marca como inativa) e informa o app.
@@ -87,7 +114,7 @@ app.MapPost("/api/validar", async (ValidarRequest req, AppDbContext db) =>
     await db.SaveChangesAsync();
 
     return Results.Ok(new { status = "bloqueado" });
-});
+}).RequireRateLimiting("validar-policy");
 
 // -----------------------------------------------------------------
 // ENDPOINTS ADMINISTRATIVOS (usados pelo bot do Discord)

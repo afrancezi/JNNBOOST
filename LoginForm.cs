@@ -25,7 +25,7 @@ namespace JnnBoost
         // Ex.: "https://192.168.15.13/api/validar" (rede local/teste)
         //      "https://seu-dominio.com/api/validar" (produção, com Let's Encrypt)
         private const string UrlServidor =
-            "https://SEU_IP_OU_DOMINIO/api/validar";
+            "https://192.168.15.13/api/validar";
 
         private static readonly Color CorFundo = Color.FromArgb(26, 26, 46);
         private static readonly Color CorBotao = Color.FromArgb(22, 33, 62);
@@ -236,6 +236,13 @@ namespace JnnBoost
                     case "expirada":
                         MostrarStatus(
                             "Esta chave de acesso expirou.\nEntre em contato para renovar.",
+                            CorErro);
+                        txtSenha.Clear();
+                        break;
+
+                    case "revogada":
+                        MostrarStatus(
+                            "Esta chave de acesso foi revogada.\nEntre em contato com o suporte.",
                             CorErro);
                         txtSenha.Clear();
                         break;
