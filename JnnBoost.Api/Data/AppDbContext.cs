@@ -24,6 +24,14 @@ public class AppDbContext : DbContext
             .Property(l => l.CriadaEm)
             .HasDefaultValueSql("NOW()");
 
+        modelBuilder.Entity<Licenca>()
+            .Property(l => l.Revogada)
+            .HasDefaultValue(false);
+
+        modelBuilder.Entity<Licenca>()
+            .Property(l => l.Ativa)
+            .HasDefaultValue(false);
+
         modelBuilder.Entity<TentativaBloqueada>()
             .Property(t => t.TentativaEm)
             .HasDefaultValueSql("NOW()");

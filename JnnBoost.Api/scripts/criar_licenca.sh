@@ -54,8 +54,8 @@ fi
 
 # --- Inserção no banco ---
 docker exec -i "$CONTAINER_POSTGRES" psql -U "$DB_USER" -d "$DB_NAME" -c "
-INSERT INTO licencas (chave_licenca, ativa, criada_em, data_expiracao)
-VALUES ('$CHAVE', false, NOW(), $DATA_EXPIRACAO);
+INSERT INTO licencas (chave_licenca, ativa, criada_em, data_expiracao, revogada)
+VALUES ('$CHAVE', false, NOW(), $DATA_EXPIRACAO, false);
 "
 
 echo ""
