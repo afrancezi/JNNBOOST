@@ -9,8 +9,8 @@ services:
       POSTGRES_DB: ${DB_NAME}
     volumes:
       - postgres-licencas-data:/var/lib/postgresql/data
-    # Sem "ports" aqui de propósito - o banco não fica exposto pra fora,
-    # só a API (na mesma rede Docker) consegue falar com ele.
+    # Sem "ports" - o banco nunca fica acessível de fora do Docker,
+    # nem pela rede interna, nem pela internet.
 
   jnnboost-api:
     build:
@@ -23,8 +23,9 @@ services:
     environment:
       DB_CONNECTION_STRING: "Host=postgres-licencas;Database=${DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD}"
       ADMIN_API_KEY: ${ADMIN_API_KEY}
-    # Sem "ports" publicado diretamente - agora só o Caddy (HTTPS) fala
-    # com a API. Ninguém acessa a porta 8080 direto de fora.
+    # Sem "ports" publicado - só o Caddy fala com ela via rede interna
+    # do Docker, e só o bot do Discord fala com ela também via rede
+    # interna (nunca pela internet).
 
   caddy:
     image: caddy:2-alpine
@@ -33,7 +34,11 @@ services:
     depends_on:
       - jnnboost-api
     ports:
+      - "80:80"    # necessário para o desafio HTTP do Let's Encrypt
       - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN}
+      CADDY_EMAIL: ${CADDY_EMAIL}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy-data:/data
@@ -53,8 +58,8 @@ services:
       ADMIN_API_KEY: ${ADMIN_API_KEY}
       LOG_CHANNEL_ID: ${LOG_CHANNEL_ID}
       STATUS_CHANNEL_ID: ${STATUS_CHANNEL_ID}
-    # Sem "ports" aqui - o bot só se conecta PARA FORA (Discord + API),
-    # ninguém precisa se conectar NELE.
+    # Sem "ports" - o bot só se conecta PARA FORA (Discord + API via
+    # rede interna), ninguém precisa se conectar NELE.
 
 volumes:
   postgres-licencas-data:

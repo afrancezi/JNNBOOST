@@ -213,6 +213,38 @@ app.MapPost("/api/admin/revogar-licenca", async (RevogarLicencaRequest req, Http
     return Results.Ok(new { chave = licenca.ChaveLicenca, revogada = true });
 });
 
+app.MapGet("/api/admin/tentativas-bloqueadas", async (HttpRequest http, AppDbContext db) =>
+{
+    if (!AdminAutorizado(http))
+        return Results.Json(new { erro = "não autorizado" }, statusCode: 401);
+
+    var resultado = await db.TentativasBloqueadas
+        .GroupBy(t => t.LicencaId)
+        .Select(g => new
+        {
+            LicencaId = g.Key,
+            Total = g.Count(),
+            UltimaTentativa = g.Max(t => t.TentativaEm)
+        })
+        .Join(db.Licencas,
+            g => g.LicencaId,
+            l => l.Id,
+            (g, l) => new
+            {
+                chave = l.ChaveLicenca,
+                total_tentativas = g.Total,
+                ultima_tentativa = g.UltimaTentativa
+            })
+        .OrderByDescending(x => x.total_tentativas)
+        .ToListAsync();
+
+    return Results.Ok(new
+    {
+        total_licencas_afetadas = resultado.Count,
+        licencas = resultado
+    });
+});
+
 app.MapGet("/api/admin/licencas-ativas", async (HttpRequest http, AppDbContext db) =>
 {
     if (!AdminAutorizado(http))

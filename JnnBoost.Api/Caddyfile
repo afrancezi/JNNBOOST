@@ -1,47 +1,31 @@
-# Caddyfile
+# Caddyfile de produção
 #
-# Proxy reverso com HTTPS na frente da API.
-#
-# MODO ATUAL (rede local, sem domínio): usa certificado auto-assinado
-# gerado automaticamente pelo Caddy ("tls internal"). Funciona e
-# criptografa o tráfego, mas o Windows/navegador vai mostrar aviso de
-# certificado não confiável, já que não é emitido por uma autoridade
-# pública - normal em ambiente de teste/rede local.
-#
-# QUANDO FOR PARA UM VPS COM DOMÍNIO DE VERDADE:
-# troque ":443" por "seu-dominio.com" (sem porta) e remova a linha
-# "tls internal" - o Caddy passa a emitir um certificado real e
-# gratuito via Let's Encrypt automaticamente, sem mais nenhuma mudança.
+# Diferenças em relação ao Caddyfile local (rede/VM):
+#   - Usa o domínio real + Let's Encrypt (certificado confiável de
+#     verdade), no lugar do certificado auto-assinado ("tls internal").
+#   - Só expõe publicamente os endpoints que o APP PRECISA alcançar
+#     (/api/validar e /api/health). Os endpoints administrativos
+#     (/api/admin/*) NUNCA ficam acessíveis pela internet - o bot do
+#     Discord fala com a API direto pela rede interna do Docker,
+#     nunca precisa passar por aqui.
 
-# Opções globais - define qual certificado usar quando a conexão não
-# manda SNI (acontece ao conectar via IP literal, como o app WinForms
-# vai fazer: https://192.168.15.13/... - IPs não usam SNI por padrão).
-# Sem isso, conexões via IP falhariam mesmo com "tls internal" configurado.
 {
-	default_sni 192.168.15.13
+	email {$CADDY_EMAIL}
 }
 
-# IMPORTANTE: o Caddy precisa saber PARA QUAL host/IP gerar o certificado
-# auto-assinado. Se o IP da sua VM mudar (ex: após reiniciar, se não tiver
-# IP fixo configurado), atualize a lista abaixo E o "default_sni" acima,
-# depois rode "docker compose up -d --build" de novo.
-localhost, 127.0.0.1, 192.168.15.13 {
-	tls internal
-
-	# Endpoint público - qualquer app cliente pode acessar
-	reverse_proxy /api/validar jnnboost-api:8080
-	reverse_proxy /api/health jnnboost-api:8080
-
-	# Endpoints administrativos - só respondem para IPs autorizados.
-	# Ajuste a lista de IPs abaixo para o(s) seu(s) IP(s) confiável(is).
-	@admin {
-		path /api/admin/*
-	}
-	handle @admin {
-		@nao_autorizado not remote_ip 192.168.15.0/24
-		respond @nao_autorizado 403
-
+{$DOMAIN} {
+	handle /api/validar {
 		reverse_proxy jnnboost-api:8080
 	}
-}
 
+	handle /api/health {
+		reverse_proxy jnnboost-api:8080
+	}
+
+	# Qualquer outra rota (incluindo /api/admin/*) cai aqui e recebe 404,
+	# como se nem existisse - inclusive para quem tentar adivinhar o
+	# caminho.
+	handle {
+		respond "Not found" 404
+	}
+}

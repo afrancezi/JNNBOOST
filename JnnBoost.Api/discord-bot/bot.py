@@ -17,6 +17,11 @@ Comandos disponíveis (só para quem tem permissão de Administrador):
       Mostra quantas licenças estão ativas no momento. Resposta vai
       para STATUS_CHANNEL_ID.
 
+  !tentativasbloqueadas
+      Mostra quais licenças sofreram tentativa de acesso por HWID
+      diferente (indício de compartilhamento), com contagem. Resposta
+      vai para STATUS_CHANNEL_ID.
+
 Em todos os casos, a mensagem original do comando é apagada do canal
 onde foi digitada (para não deixar chaves de licença expostas).
 """
@@ -241,11 +246,66 @@ async def licencas_ativas(ctx):
             await enviar_para_canal(STATUS_CHANNEL_ID, embed)
 
 
+@bot.command(name="tentativasbloqueadas")
+@apenas_admin()
+async def tentativas_bloqueadas(ctx):
+    await apagar_mensagem(ctx)
+
+    async with aiohttp.ClientSession() as session:
+        async with session.get(f"{API_URL}/api/admin/tentativas-bloqueadas", headers=HEADERS) as resp:
+            data = await resp.json()
+
+            if resp.status != 200:
+                embed = discord.Embed(
+                    title="❌ Erro",
+                    description=f"`{data.get('erro', 'desconhecido')}`",
+                    color=discord.Color.red()
+                )
+                await enviar_para_canal(STATUS_CHANNEL_ID, embed)
+                return
+
+            total = data["total_licencas_afetadas"]
+
+            if total == 0:
+                embed = discord.Embed(
+                    title="✅ Nenhuma tentativa bloqueada",
+                    description="Nenhuma licença sofreu tentativa de acesso por HWID diferente.",
+                    color=discord.Color.green()
+                )
+                embed.add_field(name="Consultado por", value=ctx.author.mention, inline=False)
+                embed.timestamp = discord.utils.utcnow()
+                await enviar_para_canal(STATUS_CHANNEL_ID, embed)
+                return
+
+            embed = discord.Embed(
+                title="⚠️ Licenças com tentativas bloqueadas",
+                description=f"**Total de licenças afetadas:** {total}",
+                color=discord.Color.orange()
+            )
+            embed.add_field(name="Consultado por", value=ctx.author.mention, inline=False)
+
+            # Mostra até 15 licenças no embed para não estourar o limite do Discord.
+            linhas = []
+            for item in data["licencas"][:15]:
+                linhas.append(
+                    f"`{item['chave']}` — {item['total_tentativas']}x "
+                    f"(última: {item['ultima_tentativa']})"
+                )
+
+            embed.add_field(name="Licenças", value="\n".join(linhas), inline=False)
+            if total > 15:
+                embed.set_footer(text=f"Mostrando 15 de {total} licenças afetadas.")
+
+            embed.timestamp = discord.utils.utcnow()
+            await enviar_para_canal(STATUS_CHANNEL_ID, embed)
+
+
 @criar_licenca.error
 @renovar_licenca.error
 @revogar_licenca.error
 @status_licenca.error
 @licencas_ativas.error
+@tentativas_bloqueadas.error
 async def erro_comando(ctx, error):
     if isinstance(error, commands.CheckFailure):
         # Tenta apagar mesmo em caso de falta de permissão, para não
